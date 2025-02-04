@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 void main() {
   runApp(const MyApp());
@@ -28,7 +29,7 @@ class MyApp extends StatelessWidget {
         //
         // This works for code too, not just values: Most code changes can be
         // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
         useMaterial3: true,
       ),
       home: const MyHomePage(title: 'Flutter Demo Home Page'),
@@ -55,7 +56,14 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+  final TextEditingController _operand1Controller = TextEditingController();
+  final TextEditingController _operand2Controller = TextEditingController();
+  final TextEditingController _resultController = TextEditingController();
+
+  bool _isValidNumber(String value) {
+    if (value.isEmpty) return true;
+    return double.tryParse(value) != null;
+  }
 
   void _incrementCounter() {
     setState(() {
@@ -64,8 +72,16 @@ class _MyHomePageState extends State<MyHomePage> {
       // so that the display can reflect the updated values. If we changed
       // _counter without calling setState(), then the build method would not be
       // called again, and so nothing would appear to happen.
-      _counter++;
     });
+  }
+
+  @override
+  void dispose() {
+    // Clean up the controller when the widget is disposed.
+    _operand1Controller.dispose();
+    _operand2Controller.dispose();
+    _resultController.dispose();
+    super.dispose();
   }
 
   @override
@@ -105,20 +121,118 @@ class _MyHomePageState extends State<MyHomePage> {
           // wireframe for each widget.
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
+            Container(
+              width: 400, // Set fixed width (adjust as needed)
+              padding: EdgeInsets.all(10),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Flexible(
+                    flex: 3,
+                    child: TextField(
+                      controller: _operand1Controller,
+                      keyboardType: TextInputType.numberWithOptions(
+                          decimal: true), // Enable decimal
+                      inputFormatters: [
+                        TextInputFormatter.withFunction((oldValue, newValue) {
+                          final text = newValue.text;
+                          // Allow only digits and at most one decimal point
+                          if (RegExp(r'^\d*\.?\d*$').hasMatch(text) &&
+                              text != '.') {
+                            return newValue;
+                          }
+                          return oldValue;
+                        }),
+                      ],
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(),
+                        labelText: 'Operand 1',
+                        errorText: _isValidNumber(_operand1Controller.text)
+                            ? null
+                            : 'Invalid number',
+                      ),
+                    ),
+                  ),
+                  Flexible(
+                    flex: 1,
+                    child: Container(
+                      padding: EdgeInsets.all(10),
+                      child: Text(
+                        '+',
+                        style: Theme.of(context).textTheme.headlineMedium,
+                      ),
+                    ),
+                  ),
+                  Flexible(
+                    flex: 3,
+                    child: TextField(
+                      controller: _operand2Controller,
+                      keyboardType: TextInputType.numberWithOptions(
+                          decimal: true), // Enable decimal
+                      inputFormatters: [
+                        TextInputFormatter.withFunction((oldValue, newValue) {
+                          final text = newValue.text;
+                          // Allow only digits and at most one decimal point
+                          if (RegExp(r'^\d*\.?\d*$').hasMatch(text) &&
+                              text != '.') {
+                            return newValue;
+                          }
+                          return oldValue;
+                        }),
+                      ],
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(),
+                        labelText: 'Operand 2',
+                        errorText: _isValidNumber(_operand2Controller.text)
+                            ? null
+                            : 'Invalid number',
+                      ),
+                    ),
+                  ),
+                  Flexible(
+                    flex: 1,
+                    child: Container(
+                      padding: EdgeInsets.all(10),
+                      child: Text(
+                        '=',
+                        style: Theme.of(context).textTheme.headlineMedium,
+                      ),
+                    ),
+                  ),
+                  Flexible(
+                    flex: 3,
+                    child: TextField(
+                      controller: _resultController,
+                      readOnly: true,
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(),
+                        labelText: 'Result',
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+            IntrinsicWidth(
+              child: Container(
+                padding: EdgeInsets.all(10),
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  ),
+                  onPressed: () {
+                    final operand1 = double.tryParse(_operand1Controller.text);
+                    final operand2 = double.tryParse(_operand2Controller.text);
+                    if (operand1 != null && operand2 != null) {
+                      _resultController.text = (operand1 + operand2).toString();
+                    }
+                  },
+                  child: Text('Calculate'),
+                ),
+              ),
             ),
           ],
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
       ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
